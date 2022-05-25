@@ -6,6 +6,8 @@
 #include <boost/thread/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+//g++ server.cpp -o asyncServer.out -pthread -lboost_thread
+
 using boost::asio::ip::tcp;
 
 class tcpConnection: public boost::enable_shared_from_this<tcpConnection>
@@ -21,6 +23,14 @@ public:
     tcp::socket& getSocket(){return socket;};
 
     void start(){
+      std::string request{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"};
+      boost::array<char, 1024> buf;
+        boost::asio::async_read(socket,boost::asio::buffer(buf),
+          boost::bind(&tcpConnection::handle_read,
+          shared_from_this(),
+          boost::asio::placeholders::error,
+          boost::asio::placeholders::bytes_transferred));
+        std::cout<<buf.data();
         std::cout<<"> ";
         std::string message{""};
         std::getline(std::cin,message);
@@ -38,9 +48,11 @@ private:
     void handle_write(const boost::system::error_code& /*error*/,
       size_t /*bytes_transferred*/){}
 
+      void handle_read(const boost::system::error_code& /*error*/,
+      size_t /*bytes_transferred*/){}
+
 private:
     tcp::socket socket;
-    std::string message;
 };
 
 class tcpServer{
@@ -129,7 +141,7 @@ int main(){
     boost::thread t(boost::bind(&boost::asio::io_context::run, &io));
     io.run();
     t.join();
-    std::cout<<"Hello world\n";
+
     return 0;
 }
 
